@@ -20,9 +20,6 @@ service OmniEventService {
 
   // Get historical events (batch request)
   rpc GetHistoricalEvents(GetHistoricalEventsRequest) returns (GetHistoricalEventsResponse);
-
-  // Get the most recent occurrence of any of the specified events
-  rpc GetLatestOccurrence(GetLatestOccurrenceRequest) returns (EventOccurrence);
 }
 
 // Request message for registering a new event
@@ -83,15 +80,6 @@ message GetHistoricalEventsRequest {
 message GetHistoricalEventsResponse {
   // List of event occurrences
   repeated EventOccurrence occurrences = 1;
-}
-
-// Request for the last occurrence of historical events
-message GetLatestOccurrenceRequest {
-  // Uuid uniquely representing the event
-  repeated bytes event_uuids = 1;
-
-  // Filter the event occurrences.
-  EventOccurrenceFilter filter = 2;
 }
 
 // Represents a registered event
