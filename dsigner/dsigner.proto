@@ -1,0 +1,125 @@
+syntax = "proto3";
+
+package dcipher.dsigner.v1;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+service DSignerService {
+  // Obtain the list of public keys supported by the service
+  rpc ListPublicKeys(google.protobuf.Empty) returns (ListPublicKeysResponse);
+
+  // Request a signature on a specific message
+  rpc GetSignature(GetSignatureRequest) returns (GetSignatureResponse);
+
+  // List signatures
+  rpc ListSignatures(ListPendingSignaturesRequest) returns (ListPendingSignaturesResponse);
+}
+
+// Enum for supported signature algorithms
+enum SignatureAlgorithm {
+  SIGNATURE_ALGORITHM_UNSPECIFIED = 0;
+  SIGNATURE_ALGORITHM_BN254_SIG_ON_G1_KECCAK256 = 1;
+}
+
+// Enum for signature status
+enum SignatureStatus {
+  SIGNATURE_STATUS_UNSPECIFIED = 0;
+  SIGNATURE_STATUS_PENDING = 1;
+  SIGNATURE_STATUS_COMPLETED = 2;
+  SIGNATURE_STATUS_FAILED = 3;
+}
+
+// Enum for signature source
+enum SignatureSource {
+  // The signature was requested through grpc
+  SIGNATURE_SOURCE_GRPC = 0;
+
+  // The signature request originates from another node
+  SIGNATURE_SOURCE_NODE = 1;
+}
+
+// Public key information
+message PublicKey {
+  // Unique identifier for the key
+  string key_id = 1;
+
+  // The public key in a algorithm-specific format
+  bytes public_key = 2;
+
+  // Signature algorithm supported by this public key
+  SignatureAlgorithm algorithm = 3;
+
+  // Optional key metadata
+  map<string, string> metadata = 4;
+
+  // Number of signers
+  int32 n = 5;
+
+  // Threshold required to obtain a signature
+  int32 t = 6;
+}
+
+// Response for ListPublicKeys
+message ListPublicKeysResponse {
+  repeated PublicKey public_keys = 1;
+}
+
+// Request for GetSignature
+message GetSignatureRequest {
+  // ID of the key to use for signing
+  string key_id = 1;
+
+  // Message to be signed (raw bytes)
+  bytes message = 2;
+
+  // DST to be used for signing
+  bytes dst = 3;
+}
+
+// Response for GetSignature
+message GetSignatureResponse {
+  // Unique identifier for this signature request
+  bytes signature_id = 1;
+
+  // The signature bytes
+  bytes signature = 2;
+
+  // Status of the signature request
+  SignatureStatus status = 3;
+}
+
+// Request for ListPendingSignatures
+message ListPendingSignaturesRequest {
+  // Optional: filter by source
+  SignatureSource source_filter = 1;
+}
+
+// Response for ListPendingSignatures
+message ListPendingSignaturesResponse {
+  repeated PendingSignature pending_signatures = 1;
+}
+
+// Individual pending signature information
+message PendingSignature {
+  // Unique identifier for this signature request
+  bytes signature_id = 1;
+
+  // ID of the key used for signing
+  string key_id = 2;
+
+  // The message that was requested to be signed
+  bytes message = 3;
+
+  // The DST to be used for signing
+  bytes dst = 4;
+
+  // The source of the signature, i.e., whether it originates from a request or from another node's partial
+  SignatureSource source = 5;
+
+  // The list of parties that have already signed the message
+  repeated uint32 parties = 6;
+
+  // Timestamp when the request was created
+  google.protobuf.Timestamp created_at = 7;
+}
