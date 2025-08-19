@@ -7,19 +7,50 @@ import "google/protobuf/timestamp.proto";
 
 service DSignerService {
   // Obtain the list of public keys supported by the service
-  rpc ListPublicKeys(google.protobuf.Empty) returns (ListPublicKeysResponse);
+  rpc ListSchemes(google.protobuf.Empty) returns (ListSchemesResponse);
 
   // Request a signature on a specific message
   rpc GetSignature(GetSignatureRequest) returns (GetSignatureResponse);
-
-  // List signatures
-  rpc ListSignatures(ListPendingSignaturesRequest) returns (ListPendingSignaturesResponse);
 }
 
 // Enum for supported signature algorithms
 enum SignatureAlgorithm {
   SIGNATURE_ALGORITHM_UNSPECIFIED = 0;
-  SIGNATURE_ALGORITHM_BN254_SIG_ON_G1_KECCAK256 = 1;
+  SIGNATURE_ALGORITHM_UNKNOWN = 1;
+
+  SIGNATURE_ALGORITHM_BN254_SIG_ON_G1_KECCAK256 = 2;
+  SIGNATURE_ALGORITHM_BN254_SIG_ON_G1_SHA256 = 3;
+
+  SIGNATURE_ALGORITHM_BLS12_381_SIG_ON_G1_SHA256 = 4;
+  SIGNATURE_ALGORITHM_BLS12_381_SIG_ON_G2_SHA256 = 5;
+}
+
+// Enum for supported signature algorithms
+enum Application {
+  APPLICATION_UNSPECIFIED = 0;
+  APPLICATION_BLOCKLOCK = 1;
+  APPLICATION_RANDOMNESS = 2;
+  APPLICATION_ANY = 3;
+}
+
+message ApplicationArgs {
+  oneof args {
+    ApplicationBlocklockArgs blocklock = 2;
+    ApplicationRandomnessArgs randomness = 3;
+    ApplicationAnyArgs any = 10;
+  }
+}
+
+message ApplicationBlocklockArgs {
+  uint64 chain_id = 1;
+}
+
+message ApplicationRandomnessArgs {
+  uint64 chain_id = 1;
+}
+
+message ApplicationAnyArgs {
+  string dst_suffix = 1;
 }
 
 // Enum for signature status
@@ -39,30 +70,38 @@ enum SignatureSource {
   SIGNATURE_SOURCE_NODE = 1;
 }
 
-// Public key information
-message PublicKey {
-  // Unique identifier for the key
-  string key_id = 1;
+// Scheme information
+message Scheme {
+  // Unique identifier for the scheme
+  string scheme_id = 1;
 
-  // The public key in a algorithm-specific format
-  bytes public_key = 2;
-
-  // Signature algorithm supported by this public key
-  SignatureAlgorithm algorithm = 3;
+  // The algorithms supported by that scheme
+  repeated SchemeAlgorithm scheme_algs = 2;
 
   // Optional key metadata
-  map<string, string> metadata = 4;
+  map<string, string> metadata = 3;
 
   // Number of signers
-  int32 n = 5;
+  uint32 n = 4;
 
   // Threshold required to obtain a signature
-  int32 t = 6;
+  uint32 t = 5;
 }
 
-// Response for ListPublicKeys
-message ListPublicKeysResponse {
-  repeated PublicKey public_keys = 1;
+message SchemeAlgorithm {
+  // The public key in a scheme-specific format
+  bytes public_key = 1;
+
+  // Signature algorithms supported by this scheme
+  repeated SignatureAlgorithm algs = 2;
+
+  // Applications supported by this scheme
+  repeated Application apps = 3;
+}
+
+// Response for ListSchemes
+message ListSchemesResponse {
+  repeated Scheme schemes = 1;
 }
 
 // Request for GetSignature
@@ -70,56 +109,21 @@ message GetSignatureRequest {
   // ID of the key to use for signing
   string key_id = 1;
 
-  // Message to be signed (raw bytes)
-  bytes message = 2;
+  // Algorithm to use
+  SignatureAlgorithm alg = 2;
 
-  // DST to be used for signing
-  bytes dst = 3;
+  // Application-specific arguments
+  ApplicationArgs app_args = 3;
+
+  // Message to be signed (raw bytes)
+  bytes message = 4;
 }
 
 // Response for GetSignature
 message GetSignatureResponse {
-  // Unique identifier for this signature request
-  bytes signature_id = 1;
-
   // The signature bytes
   bytes signature = 2;
 
   // Status of the signature request
   SignatureStatus status = 3;
-}
-
-// Request for ListPendingSignatures
-message ListPendingSignaturesRequest {
-  // Optional: filter by source
-  SignatureSource source_filter = 1;
-}
-
-// Response for ListPendingSignatures
-message ListPendingSignaturesResponse {
-  repeated PendingSignature pending_signatures = 1;
-}
-
-// Individual pending signature information
-message PendingSignature {
-  // Unique identifier for this signature request
-  bytes signature_id = 1;
-
-  // ID of the key used for signing
-  string key_id = 2;
-
-  // The message that was requested to be signed
-  bytes message = 3;
-
-  // The DST to be used for signing
-  bytes dst = 4;
-
-  // The source of the signature, i.e., whether it originates from a request or from another node's partial
-  SignatureSource source = 5;
-
-  // The list of parties that have already signed the message
-  repeated uint32 parties = 6;
-
-  // Timestamp when the request was created
-  google.protobuf.Timestamp created_at = 7;
 }
