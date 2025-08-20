@@ -11,6 +11,9 @@ service DSignerService {
 
   // Request a signature on a specific message
   rpc GetSignature(GetSignatureRequest) returns (GetSignatureResponse);
+
+  // Request a signature on a specific message
+  rpc GetVerificationParameters(GetVerificationParametersRequest) returns (GetVerificationParametersResponse);
 }
 
 // Enum for supported signature algorithms
@@ -23,6 +26,16 @@ enum SignatureAlgorithm {
 
   SIGNATURE_ALGORITHM_BLS12_381_SIG_ON_G1_SHA256 = 4;
   SIGNATURE_ALGORITHM_BLS12_381_SIG_ON_G2_SHA256 = 5;
+}
+
+// (scheme_id, alg, app)-specific verification parameters
+message VerificationParameters {
+  string scheme_id = 1;
+  SignatureAlgorithm alg = 2;
+  ApplicationArgs app_args = 3;
+
+  bytes public_key = 4;
+  bytes dst = 5;
 }
 
 // Enum for supported signature algorithms
@@ -106,8 +119,8 @@ message ListSchemesResponse {
 
 // Request for GetSignature
 message GetSignatureRequest {
-  // ID of the key to use for signing
-  string key_id = 1;
+  // ID of the scheme to use for signing
+  string scheme_id = 1;
 
   // Algorithm to use
   SignatureAlgorithm alg = 2;
@@ -126,4 +139,21 @@ message GetSignatureResponse {
 
   // Status of the signature request
   SignatureStatus status = 3;
+}
+
+// Request for GetVerificationParameters
+message GetVerificationParametersRequest {
+  // ID of the scheme
+  string scheme_id = 1;
+
+  // Algorithm to use
+  SignatureAlgorithm alg = 2;
+
+  // Application-specific arguments
+  ApplicationArgs app_args = 3;
+}
+
+// Response for GetVerificationParameters
+message GetVerificationParametersResponse {
+  VerificationParameters params = 1;
 }
