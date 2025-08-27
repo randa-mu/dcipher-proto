@@ -26,6 +26,8 @@ enum SignatureAlgorithm {
 
   SIGNATURE_ALGORITHM_BLS12_381_SIG_ON_G1_SHA256 = 4;
   SIGNATURE_ALGORITHM_BLS12_381_SIG_ON_G2_SHA256 = 5;
+
+  SIGNATURE_ALGORITHM_BLS12_381_SIG_ON_G1_SHA256_COMPRESSED = 6;
 }
 
 // (scheme_id, alg, app)-specific verification parameters
