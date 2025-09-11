@@ -43,12 +43,14 @@ enum Application {
   APPLICATION_BLOCKLOCK = 1;
   APPLICATION_RANDOMNESS = 2;
   APPLICATION_ANY = 3;
+  APPLICATION_EVMNET = 4;
 }
 
 message ApplicationArgs {
   oneof args {
     ApplicationBlocklockArgs blocklock = 2;
     ApplicationRandomnessArgs randomness = 3;
+    google.protobuf.Empty evmnet = 4;
     ApplicationAnyArgs any = 10;
   }
 }
