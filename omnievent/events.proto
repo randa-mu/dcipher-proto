@@ -41,6 +41,9 @@ message RegisterNewEventRequest {
 
   // Block safety level - how we want to handle block finality
   BlockSafety block_safety = 5;
+
+  // Automatic re-registration delay
+  optional uint64 reregistration_delay = 6;
 }
 
 // Response after registering a new event
