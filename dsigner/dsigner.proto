@@ -1,0 +1,160 @@
+syntax = "proto3";
+
+package dcipher.dsigner.v1;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+service DSignerService {
+  // Obtain the list of public keys supported by the service
+  rpc ListSchemes(google.protobuf.Empty) returns (ListSchemesResponse);
+
+  // Request a signature on a specific message
+  rpc GetSignature(GetSignatureRequest) returns (GetSignatureResponse);
+
+  // Request a signature on a specific message
+  rpc GetVerificationParameters(GetVerificationParametersRequest) returns (GetVerificationParametersResponse);
+}
+
+// Enum for supported signature algorithms
+enum SignatureAlgorithm {
+  SIGNATURE_ALGORITHM_UNSPECIFIED = 0;
+  SIGNATURE_ALGORITHM_UNKNOWN = 1;
+
+  SIGNATURE_ALGORITHM_BN254_SIG_ON_G1_KECCAK256 = 2;
+
+  SIGNATURE_ALGORITHM_BLS12_381_SIG_ON_G1_SHA256 = 3;
+  SIGNATURE_ALGORITHM_BLS12_381_SIG_ON_G1_SHA256_COMPRESSED = 4;
+}
+
+// (scheme_id, alg, app)-specific verification parameters
+message VerificationParameters {
+  string scheme_id = 1;
+  SignatureAlgorithm alg = 2;
+  ApplicationArgs app_args = 3;
+
+  bytes public_key = 4;
+  bytes dst = 5;
+}
+
+// Enum for supported signature algorithms
+enum Application {
+  APPLICATION_UNSPECIFIED = 0;
+  APPLICATION_BLOCKLOCK = 1;
+  APPLICATION_RANDOMNESS = 2;
+  APPLICATION_ANY = 3;
+  APPLICATION_EVMNET = 4;
+}
+
+message ApplicationArgs {
+  oneof args {
+    ApplicationBlocklockArgs blocklock = 2;
+    ApplicationRandomnessArgs randomness = 3;
+    google.protobuf.Empty evmnet = 4;
+    ApplicationAnyArgs any = 10;
+  }
+}
+
+message ApplicationBlocklockArgs {
+  uint64 chain_id = 1;
+}
+
+message ApplicationRandomnessArgs {
+  uint64 chain_id = 1;
+}
+
+message ApplicationAnyArgs {
+  string dst_suffix = 1;
+}
+
+// Enum for signature status
+enum SignatureStatus {
+  SIGNATURE_STATUS_UNSPECIFIED = 0;
+  SIGNATURE_STATUS_PENDING = 1;
+  SIGNATURE_STATUS_COMPLETED = 2;
+  SIGNATURE_STATUS_FAILED = 3;
+}
+
+// Enum for signature source
+enum SignatureSource {
+  // The signature was requested through grpc
+  SIGNATURE_SOURCE_GRPC = 0;
+
+  // The signature request originates from another node
+  SIGNATURE_SOURCE_NODE = 1;
+}
+
+// Scheme information
+message Scheme {
+  // Unique identifier for the scheme
+  string scheme_id = 1;
+
+  // The algorithms supported by that scheme
+  repeated SchemeAlgorithm scheme_algs = 2;
+
+  // Optional key metadata
+  map<string, string> metadata = 3;
+
+  // Number of signers
+  uint32 n = 4;
+
+  // Threshold required to obtain a signature
+  uint32 t = 5;
+}
+
+message SchemeAlgorithm {
+  // The public key in a scheme-specific format
+  bytes public_key = 1;
+
+  // Signature algorithms supported by this scheme
+  repeated SignatureAlgorithm algs = 2;
+
+  // Applications supported by this scheme
+  repeated Application apps = 3;
+}
+
+// Response for ListSchemes
+message ListSchemesResponse {
+  repeated Scheme schemes = 1;
+}
+
+// Request for GetSignature
+message GetSignatureRequest {
+  // ID of the scheme to use for signing
+  string scheme_id = 1;
+
+  // Algorithm to use
+  SignatureAlgorithm alg = 2;
+
+  // Application-specific arguments
+  ApplicationArgs app_args = 3;
+
+  // Message to be signed (raw bytes)
+  bytes message = 4;
+}
+
+// Response for GetSignature
+message GetSignatureResponse {
+  // The signature bytes
+  bytes signature = 2;
+
+  // Status of the signature request
+  SignatureStatus status = 3;
+}
+
+// Request for GetVerificationParameters
+message GetVerificationParametersRequest {
+  // ID of the scheme
+  string scheme_id = 1;
+
+  // Algorithm to use
+  SignatureAlgorithm alg = 2;
+
+  // Application-specific arguments
+  ApplicationArgs app_args = 3;
+}
+
+// Response for GetVerificationParameters
+message GetVerificationParametersResponse {
+  VerificationParameters params = 1;
+}
