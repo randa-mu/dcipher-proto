@@ -136,6 +136,9 @@ message EventOccurrence {
 
   // Address of the contract
   bytes address = 6;
+
+  // The transaction hash in which the event was emitted
+  bytes tx_hash = 7;
 }
 
 // Block information
